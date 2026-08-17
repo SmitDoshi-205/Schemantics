@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const authRoute = require('./routes/auth');
 
 const healthRoute = require('./routes/health');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
@@ -14,10 +15,8 @@ function createApp() {
 
   // --- Routes ---
   app.use('/api/health', healthRoute);
+  app.use('/api/auth', authRoute);
 
-  // Endpoint CRUD, auth, etc. get mounted here starting Day 2/3.
-
-  // --- 404 + error handling (must stay last) ---
   app.use(notFound);
   app.use(errorHandler);
 

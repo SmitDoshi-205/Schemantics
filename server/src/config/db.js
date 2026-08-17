@@ -1,15 +1,5 @@
 const mongoose = require('mongoose');
 
-/**
- * Connects to MongoDB using the URI from environment config.
- *
- * Design note: this does NOT crash the process if the initial connection
- * fails. In local dev you may start the server before Mongo is running -
- * we log a clear warning instead of killing the whole app, since the
- * health check route (Day 1) has no DB dependency. From Day 3 onward,
- * routes that actually need the DB will fail gracefully via the error
- * handler if the connection genuinely never comes up.
- */
 async function connectDB() {
   const uri = process.env.MONGODB_URI;
 

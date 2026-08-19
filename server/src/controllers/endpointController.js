@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Endpoint = require('../models/Endpoint');
 const { validateEndpointInput } = require('../utils/validateEndpointInput');
 const { performCheck } = require('../services/checkerService');
+const { requestDiff } = require('../services/diffService');
 
 function isValidId(id) {
   return mongoose.Types.ObjectId.isValid(id);
@@ -109,8 +110,29 @@ async function checkNow(req, res, next) {
     }
 
     const result = await performCheck(endpoint);
-
     endpoint.lastCheckedAt = new Date();
+
+    let diff = null;
+    let baselineCaptured = false;
+
+    if (result.ok) {
+      if (!endpoint.baselineSchema) {
+        const initialDiff = await requestDiff({}, result.responseData);
+        endpoint.baselineSchema = Object.fromEntries(
+          initialDiff.map((d) => [d.path, d.newType])
+        );
+        endpoint.status = 'stable';
+        baselineCaptured = true;
+      } else {
+        diff = await requestDiff(endpoint.baselineSchema, result.responseData);
+        const hasBreaking = diff.some((d) => d.severity === 'breaking');
+        const hasWarning = diff.some((d) => d.severity === 'warning');
+        endpoint.status = hasBreaking ? 'broken' : hasWarning ? 'drifted' : 'stable';
+      }
+    } else {
+      endpoint.status = 'broken';
+    }
+
     await endpoint.save();
 
     res.status(200).json({
@@ -121,6 +143,9 @@ async function checkNow(req, res, next) {
       responseTimeMs: result.responseTimeMs,
       responseData: result.responseData,
       error: result.error,
+      status: endpoint.status,
+      baselineCaptured,
+      diff,
     });
   } catch (err) {
     next(err);

@@ -40,6 +40,10 @@ const endpointSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    baselineSchema: {
+      type: Object,
+      default: null,
+    },
     status: {
       type: String,
       enum: STATUS_VALUES,

@@ -1,3 +1,5 @@
+from urllib import response
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -29,9 +31,14 @@ def test_diff_endpoint_detects_removed_field():
     response = client.post("/diff", json=payload)
     assert response.status_code == 200
     assert response.json() == [
-        {"path": "content", "changeType": "removed", "oldType": "string", "newType": None},
+        {
+            "path": "content",
+            "changeType": "removed",
+            "oldType": "string",
+            "newType": None,
+            "severity": "breaking",
+        },
     ]
-
 
 def test_diff_endpoint_detects_type_change():
     payload = {
@@ -41,9 +48,14 @@ def test_diff_endpoint_detects_type_change():
     response = client.post("/diff", json=payload)
     assert response.status_code == 200
     assert response.json() == [
-        {"path": "id", "changeType": "type_changed", "oldType": "number", "newType": "string"},
+        {
+            "path": "id",
+            "changeType": "type_changed",
+            "oldType": "number",
+            "newType": "string",
+            "severity": "breaking",
+        },
     ]
-
 
 def test_diff_endpoint_matches_spec_example():
     payload = {
@@ -55,10 +67,16 @@ def test_diff_endpoint_matches_spec_example():
 
     result = response.json()
     change_types = {d["path"]: d["changeType"] for d in result}
+    severities = {d["path"]: d["severity"] for d in result}
     assert change_types == {
         "content": "removed",
         "headline": "added",
         "id": "type_changed",
+    }
+    assert severities == {
+        "content": "breaking",
+        "headline": "warning",
+        "id": "breaking",
     }
 
 

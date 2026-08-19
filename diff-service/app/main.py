@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.schema_comparator import DiffEntry, compare_schemas
 from app.schema_extractor import extract_schema
+from app.severity import with_severity
 
 app = FastAPI(
     title="Schemantics Diff Service",
@@ -19,12 +20,12 @@ def health_check():
 
 
 class DiffRequest(BaseModel):
-
     baselineSchema: Dict[str, str]
     newResponseJson: Any = None
 
 
 @app.post("/diff")
-def diff(request: DiffRequest) -> List[DiffEntry]:
+def diff(request: DiffRequest) -> List[dict]:
     new_schema = extract_schema(request.newResponseJson)
-    return compare_schemas(request.baselineSchema, new_schema)
+    raw_diffs = compare_schemas(request.baselineSchema, new_schema)
+    return with_severity(raw_diffs)

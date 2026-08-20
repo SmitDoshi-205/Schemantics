@@ -7,6 +7,7 @@ const {
   deleteEndpoint,
   checkNow,
 } = require('../controllers/endpointController');
+const { listChecks, getCheckDiff } = require('../controllers/checkController');
 
 const router = express.Router();
 
@@ -17,6 +18,8 @@ router.post('/', createEndpoint);
 router.post('/:id/check-now', checkNow);
 router.get('/', listEndpoints);
 router.get('/:id', getEndpoint);
+router.get('/:id/checks', listChecks);
+router.get('/:id/diff/:checkId', getCheckDiff);
 router.delete('/:id', deleteEndpoint);
 
 module.exports = router;

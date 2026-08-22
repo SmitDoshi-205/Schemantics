@@ -63,7 +63,51 @@ async function getMe(req, res) {
     id: req.user._id,
     email: req.user.email,
     createdAt: req.user.createdAt,
+    notifyEmail: req.user.notifyEmail,
+    webhookUrl: req.user.webhookUrl,
   });
 }
 
-module.exports = { register, login, getMe };
+async function updateNotificationSettings(req, res, next) {
+  try {
+    const { notifyEmail, webhookUrl } = req.body;
+
+    if (notifyEmail !== undefined && typeof notifyEmail !== 'boolean') {
+      const err = new Error('notifyEmail must be a boolean.');
+      err.status = 400;
+      throw err;
+    }
+
+    if (webhookUrl !== undefined && webhookUrl !== null) {
+      if (typeof webhookUrl !== 'string') {
+        const err = new Error('webhookUrl must be a string or null.');
+        err.status = 400;
+        throw err;
+      }
+      try {
+        const parsed = new URL(webhookUrl);
+        if (!['http:', 'https:'].includes(parsed.protocol)) {
+          throw new Error('bad protocol');
+        }
+      } catch (e) {
+        const err = new Error('webhookUrl is not a valid http(s) URL.');
+        err.status = 400;
+        throw err;
+      }
+    }
+
+    if (notifyEmail !== undefined) req.user.notifyEmail = notifyEmail;
+    if (webhookUrl !== undefined) req.user.webhookUrl = webhookUrl;
+
+    await req.user.save();
+
+    res.status(200).json({
+      notifyEmail: req.user.notifyEmail,
+      webhookUrl: req.user.webhookUrl,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { register, login, getMe, updateNotificationSettings };

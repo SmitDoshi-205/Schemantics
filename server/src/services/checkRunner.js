@@ -1,7 +1,9 @@
 const Baseline = require('../models/Baseline');
 const Check = require('../models/Check');
+const User = require('../models/User');
 const { performCheck } = require('./checkerService');
 const { requestDiff } = require('./diffService');
+const {  sendEmailAlert, sendWebhookAlert } = require('./notificationService');
 
 const MAX_SAMPLE_LENGTH = 50000;
 
@@ -35,6 +37,8 @@ async function runCheckForEndpoint(endpoint) {
         diff = rawDiff;
         const hasBreaking = diff.some((d) => d.severity === 'breaking');
         endpoint.status = hasBreaking ? 'broken' : 'drifted';
+
+        await notifyUserOfDrift(endpoint, diff);
       }
     }
   } else {
@@ -67,6 +71,33 @@ function safeSample(data) {
     return data;
   } catch (e) {
     return null;
+  }
+}
+
+async function notifyUserOfDrift(endpoint, diff) {
+  try {
+    const user = await User.findById(endpoint.userId);
+    if (!user) return;
+
+    if (user.notifyEmail) {
+      await sendEmailAlert({
+        to: user.email,
+        endpointName: endpoint.name,
+        status: endpoint.status,
+        diff,
+      });
+    }
+
+    if (user.webhookUrl) {
+      await sendWebhookAlert({
+        webhookUrl: user.webhookUrl,
+        endpointName: endpoint.name,
+        status: endpoint.status,
+        diff,
+      });
+    }
+  } catch (err) {
+    console.error('[notifications] Unexpected error while notifying user:', err.message);
   }
 }
 

@@ -1,8 +1,6 @@
 const mongoose = require('mongoose');
 const Endpoint = require('../models/Endpoint');
 const { validateEndpointInput } = require('../utils/validateEndpointInput');
-const { performCheck } = require('../services/checkerService');
-const { requestDiff } = require('../services/diffService');
 const { runCheckForEndpoint } = require('../services/checkRunner');
 
 function isValidId(id) {

@@ -15,7 +15,7 @@ async function start() {
     console.log(`[server] Schemantics backend listening on port ${PORT}`);
     console.log(`[server] Health check: http://localhost:${PORT}/api/health`);
   });
+  startScheduler();
 }
 
 start();
-startScheduler();

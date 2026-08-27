@@ -1,0 +1,251 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #0d1515;
+  --color-surface-dim: #0d1515;
+  --color-surface-bright: #333b3b;
+  --color-surface-container-lowest: #080f10;
+  --color-surface-container-low: #151d1e;
+  --color-surface-container: #192122;
+  --color-surface-container-high: #232b2c;
+  --color-surface-container-highest: #2e3637;
+  --color-surface-variant: #2e3637;
+  --color-surface-base: #020a0b;
+  --color-surface-teal-low: #051618;
+  --color-surface-teal-medium: #0a2427;
+
+  --color-on-surface: #dce4e4;
+  --color-on-surface-variant: #b9cacb;
+  --color-inverse-surface: #dce4e4;
+  --color-inverse-on-surface: #2a3232;
+
+  --color-outline: #849495;
+  --color-outline-variant: #3a494b;
+  --color-surface-tint: #00dbe7;
+
+  --color-primary: #e1fdff;
+  --color-on-primary: #00363a;
+  --color-primary-container: #00f2ff;
+  --color-on-primary-container: #006a71;
+  --color-inverse-primary: #00696f;
+  --color-primary-fixed: #74f5ff;
+  --color-primary-fixed-dim: #00dbe7;
+
+  --color-secondary: #a6cdd5;
+  --color-on-secondary: #0b363c;
+  --color-secondary-container: #264c53;
+  --color-on-secondary-container: #95bcc3;
+
+  --color-tertiary: #fff6e4;
+  --color-on-tertiary: #3b2f00;
+  --color-tertiary-container: #fed83a;
+  --color-on-tertiary-container: #725e00;
+  --color-tertiary-fixed-dim: #e8c423;
+
+  --color-error: #ffb4ab;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+
+  --color-background: #0d1515;
+  --color-on-background: #dce4e4;
+
+  --color-drift-warning: #ffcc00;
+  --color-drift-critical: #ff3c3c;
+
+  --font-display: "Space Grotesk", sans-serif;
+  --font-body: "JetBrains Mono", monospace;
+
+  --radius-sm: 0.125rem;
+  --radius-DEFAULT: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  --shadow-neo: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-neo-lg: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-neo-sm: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-on-background);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-primary-container);
+  color: var(--color-on-primary);
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+.cyber-grid {
+  background-image:
+    linear-gradient(rgba(132, 148, 149, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(132, 148, 149, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.glass-panel {
+  background: rgba(25, 33, 34, 0.45);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 2px solid #000;
+  box-shadow:
+    8px 8px 0 0 #000,
+    inset 0 0 0 1px rgba(0, 242, 255, 0.22);
+}
+.glass-panel-sm {
+  background: rgba(25, 33, 34, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 2px solid #000;
+  box-shadow:
+    4px 4px 0 0 #000,
+    inset 0 0 0 1px rgba(0, 242, 255, 0.18);
+}
+
+.neo-button {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-primary-container);
+  color: var(--color-on-primary-container);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-neo);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+.neo-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-25deg);
+  animation: shine 3.2s infinite;
+}
+.neo-button:hover {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-neo-sm);
+}
+.neo-button:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+.neo-button-secondary {
+  background-color: var(--color-surface-container-high);
+  color: var(--color-on-surface);
+  border: 2px solid #000;
+  box-shadow: var(--shadow-neo);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+.neo-button-secondary:hover {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-neo-sm);
+}
+.neo-button-secondary:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 0 transparent;
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  20% { left: 200%; }
+  100% { left: 200%; }
+}
+
+.neo-input {
+  background-color: var(--color-surface-teal-low);
+  border: 2px solid var(--color-outline-variant);
+  color: var(--color-on-surface);
+  caret-color: var(--color-primary-container);
+  transition: all 0.2s ease;
+}
+.neo-input::placeholder {
+  color: var(--color-on-surface-variant);
+  opacity: 0.5;
+}
+.neo-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-neo-sm);
+}
+
+.cyber-chip {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid currentColor;
+  background: currentColor;
+}
+.cyber-chip > span {
+  color: inherit;
+}
+
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.reveal-hidden { opacity: 0; transform: translateY(24px); }
+.reveal-visible { animation: reveal-up 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse-soft { animation: pulse-soft 2.2s ease-in-out infinite; }
+
+@keyframes drift-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(30px, -20px) scale(1.06); }
+}
+.ambient-glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(120px);
+  pointer-events: none;
+  animation: drift-slow 16s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-visible, .animate-pulse-soft, .ambient-glow, .neo-button::before {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@keyframes line-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

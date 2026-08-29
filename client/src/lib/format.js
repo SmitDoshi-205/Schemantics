@@ -18,3 +18,13 @@ export function formatInterval(minutes) {
   if (minutes % 60 === 0) return `${minutes / 60}h`;
   return `${minutes}m`;
 }
+
+export function formatTimestamp(isoDate) {
+  if (!isoDate) return '—';
+  return new Date(isoDate).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}

@@ -1,7 +1,7 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-async function request(path, { method = 'GET', body, token } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
+async function request(path, { method = "GET", body, token } = {}) {
+  const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetch(`${API_URL}${path}`, {
@@ -13,22 +13,30 @@ async function request(path, { method = 'GET', body, token } = {}) {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data.message || 'Something went wrong. Please try again.');
+    throw new Error(data.message || "Something went wrong. Please try again.");
   }
 
   return data;
 }
 
 export const api = {
-  register: (email, password) => request('/auth/register', { method: 'POST', body: { email, password } }),
-  login: (email, password) => request('/auth/login', { method: 'POST', body: { email, password } }),
-  me: (token) => request('/auth/me', { token }),
+  register: (email, password) =>
+    request("/auth/register", { method: "POST", body: { email, password } }),
+  login: (email, password) =>
+    request("/auth/login", { method: "POST", body: { email, password } }),
+  me: (token) => request("/auth/me", { token }),
   updateNotifications: (token, settings) =>
-    request('/auth/notifications', { method: 'PATCH', body: settings, token }),
+    request("/auth/notifications", { method: "PATCH", body: settings, token }),
 
-  listEndpoints: (token) => request('/endpoints', { token }),
-  createEndpoint: (token, data) => request('/endpoints', { method: 'POST', body: data, token }),
+  listEndpoints: (token) => request("/endpoints", { token }),
+  createEndpoint: (token, data) =>
+    request("/endpoints", { method: "POST", body: data, token }),
   getEndpoint: (token, id) => request(`/endpoints/${id}`, { token }),
-  deleteEndpoint: (token, id) => request(`/endpoints/${id}`, { method: 'DELETE', token }),
-  checkNow: (token, id) => request(`/endpoints/${id}/check-now`, { method: 'POST', token }),
+  deleteEndpoint: (token, id) =>
+    request(`/endpoints/${id}`, { method: "DELETE", token }),
+  checkNow: (token, id) =>
+    request(`/endpoints/${id}/check-now`, { method: "POST", token }),
+  listChecks: (token, id) => request(`/endpoints/${id}/checks`, { token }),
+  getCheckDiff: (token, id, checkId) =>
+    request(`/endpoints/${id}/diff/${checkId}`, { token }),
 };

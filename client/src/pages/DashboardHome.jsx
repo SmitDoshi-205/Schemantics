@@ -162,7 +162,12 @@ export default function DashboardHome() {
               <div className="glass-panel flex h-full flex-col gap-4 p-6 transition-transform hover:-translate-y-1">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h3 className="truncate font-display text-lg font-semibold text-on-surface">{ep.name}</h3>
+                    <Link
+                      to={`/dashboard/endpoints/${ep._id}`}
+                      className="block truncate font-display text-lg font-semibold text-on-surface hover:text-primary-container"
+                    >
+                      {ep.name}
+                    </Link>
                     <p className="truncate font-body text-xs text-on-surface-variant">{ep.url}</p>
                   </div>
                   <StatusBadge status={ep.status} />

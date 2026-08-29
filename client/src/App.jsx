@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import DashboardHome from './pages/DashboardHome';
 import AddEndpoint from './pages/AddEndpoint';
 import NotificationSettings from './pages/NotificationSettings';
+import EndpointDetail from './pages/EndpointDetail';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardHome />} />
               <Route path="/dashboard/add" element={<AddEndpoint />} />
               <Route path="/dashboard/settings" element={<NotificationSettings />} />
+              <Route path="/dashboard/endpoints/:id" element={<EndpointDetail />} />
             </Route>
           </Route>
 

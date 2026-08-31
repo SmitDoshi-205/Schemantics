@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useToast } from '../context/useToast';
+import { useConfirm } from '../context/useConfirm';
 import { api } from '../lib/api';
 import { timeAgo, formatInterval, formatTimestamp } from '../lib/format';
 import StatusBadge from '../components/StatusBadge';
 import ResponseTimeChart from '../components/ResponseTimeChart';
 import Reveal from '../components/Reveal';
+
+const INTERVAL_STEPS = [1, 5, 15, 60];
+const INTERVAL_LABELS = ['1m', '5m', '15m', '1h'];
 
 function DiffSummary({ diffResult }) {
   if (!diffResult || diffResult.length === 0) {
@@ -30,16 +35,105 @@ function DiffSummary({ diffResult }) {
   );
 }
 
+function EditEndpointForm({ endpoint, onCancel, onSaved }) {
+  const { token } = useAuth();
+  const toast = useToast();
+  const [name, setName] = useState(endpoint.name);
+  const [intervalIndex, setIntervalIndex] = useState(() => {
+    const idx = INTERVAL_STEPS.indexOf(endpoint.checkIntervalMinutes);
+    return idx === -1 ? 1 : idx;
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSave(e) {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+    try {
+      const updated = await api.updateEndpoint(token, endpoint._id, {
+        name,
+        checkIntervalMinutes: INTERVAL_STEPS[intervalIndex],
+      });
+      toast.success('Endpoint updated.');
+      onSaved(updated);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSave} className="glass-panel flex flex-col gap-5 p-6">
+      <div className="flex flex-col gap-2">
+        <label htmlFor="edit-name" className="font-display text-[11px] uppercase tracking-0.1em text-secondary">
+          Node Alias // Name
+        </label>
+        <input
+          id="edit-name"
+          type="text"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="neo-input w-full px-4 py-3 font-body text-sm"
+        />
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <label className="flex items-center justify-between font-display text-[11px] uppercase tracking-0.1em text-secondary">
+          <span>Polling Frequency // Interval</span>
+          <span className="font-body text-xs text-primary">{INTERVAL_LABELS[intervalIndex]}</span>
+        </label>
+        <input
+          type="range"
+          min={0}
+          max={INTERVAL_STEPS.length - 1}
+          step={1}
+          value={intervalIndex}
+          onChange={(e) => setIntervalIndex(Number(e.target.value))}
+          className="w-full accent-primary-container"
+        />
+        <div className="flex justify-between px-1 font-body text-xs text-outline-variant">
+          {INTERVAL_LABELS.map((l) => (
+            <span key={l}>{l}</span>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div className="border-2 border-error bg-error-container/20 px-4 py-3 font-body text-xs text-error">{error}</div>
+      )}
+
+      <div className="flex justify-end gap-3">
+        <button type="button" onClick={onCancel} className="neo-button-secondary px-4 py-2 font-display text-xs uppercase">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={saving}
+          className="neo-button px-4 py-2 font-display text-xs font-bold uppercase disabled:opacity-60"
+        >
+          {saving ? 'Saving...' : 'Save Changes'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 export default function EndpointDetail() {
   const { id } = useParams();
   const { token } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [endpoint, setEndpoint] = useState(null);
   const [checks, setChecks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [acting, setActing] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -67,21 +161,46 @@ export default function EndpointDetail() {
     try {
       await api.checkNow(token, id);
       await load();
+      toast.success('Check complete.');
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setActing(false);
     }
   }
 
   async function handleDelete() {
-    if (!endpoint || !window.confirm(`Stop monitoring "${endpoint.name}"? This cannot be undone.`)) return;
+    if (!endpoint) return;
+    const ok = await confirm(`Stop monitoring "${endpoint.name}"? This cannot be undone.`);
+    if (!ok) return;
+
     setActing(true);
     try {
       await api.deleteEndpoint(token, id);
+      toast.success(`"${endpoint.name}" is no longer being monitored.`);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
+      setActing(false);
+    }
+  }
+
+  async function handleResetBaseline() {
+    if (!endpoint) return;
+    const ok = await confirm(
+      `Accept the current response shape as the new baseline for "${endpoint.name}"? Past drift history is kept, but future checks compare against this new shape.`,
+      { danger: false }
+    );
+    if (!ok) return;
+
+    setActing(true);
+    try {
+      await api.resetBaseline(token, id);
+      await load();
+      toast.success('Baseline reset - new shape captured.');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
       setActing(false);
     }
   }
@@ -117,40 +236,69 @@ export default function EndpointDetail() {
         Back to Endpoints
       </Link>
 
-      <Reveal>
-        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-4">
-              <h1 className="font-display text-2xl font-bold text-on-surface sm:text-3xl">{endpoint.name}</h1>
-              <StatusBadge status={endpoint.status} />
+      {editing ? (
+        <Reveal>
+          <EditEndpointForm
+            endpoint={endpoint}
+            onCancel={() => setEditing(false)}
+            onSaved={(updated) => {
+              setEndpoint(updated);
+              setEditing(false);
+            }}
+          />
+        </Reveal>
+      ) : (
+        <Reveal>
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-4">
+                <h1 className="font-display text-2xl font-bold text-on-surface sm:text-3xl">{endpoint.name}</h1>
+                <StatusBadge status={endpoint.status} />
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="border-2 border-black bg-tertiary-container px-2 py-0.5 font-body text-xs font-bold text-on-tertiary-container">
+                  {endpoint.method}
+                </span>
+                <span className="break-all font-body text-sm text-on-surface-variant">{endpoint.url}</span>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="border-2 border-black bg-tertiary-container px-2 py-0.5 font-body text-xs font-bold text-on-tertiary-container">
-                {endpoint.method}
-              </span>
-              <span className="break-all font-body text-sm text-on-surface-variant">{endpoint.url}</span>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setEditing(true)}
+                disabled={acting}
+                className="neo-button-secondary flex items-center gap-2 px-4 py-2 font-display text-xs uppercase disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[16px]">edit</span>
+                Edit
+              </button>
+              <button
+                onClick={handleResetBaseline}
+                disabled={acting}
+                className="neo-button-secondary flex items-center gap-2 px-4 py-2 font-display text-xs uppercase disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[16px]">history_edu</span>
+                Reset Baseline
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={acting}
+                className="neo-button-secondary flex items-center gap-2 px-4 py-2 font-display text-xs uppercase text-error disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[16px]">delete</span>
+                Delete
+              </button>
+              <button
+                onClick={handleCheckNow}
+                disabled={acting}
+                className="neo-button flex items-center gap-2 px-4 py-2 font-display text-xs font-bold uppercase disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-[16px]">play_arrow</span>
+                {acting ? 'Working...' : 'Check Now'}
+              </button>
             </div>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={handleDelete}
-              disabled={acting}
-              className="neo-button-secondary flex items-center gap-2 px-4 py-2 font-display text-xs uppercase text-error disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-[16px]">delete</span>
-              Delete
-            </button>
-            <button
-              onClick={handleCheckNow}
-              disabled={acting}
-              className="neo-button flex items-center gap-2 px-4 py-2 font-display text-xs font-bold uppercase disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-              {acting ? 'Checking...' : 'Check Now'}
-            </button>
-          </div>
-        </div>
-      </Reveal>
+        </Reveal>
+      )}
 
       {error && (
         <div className="border-2 border-error bg-error-container/20 px-4 py-3 font-body text-sm text-error">
@@ -181,27 +329,35 @@ export default function EndpointDetail() {
                 <p className="font-body text-sm text-on-surface-variant">No checks recorded yet.</p>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {checks.map((c) => (
-                    <div
-                      key={c._id}
-                      className="flex flex-wrap items-center justify-between gap-3 border-2 border-outline-variant bg-surface-container-lowest px-4 py-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`material-symbols-outlined text-[18px] ${c.ok ? 'text-secondary' : 'text-error'}`}
-                        >
-                          {c.ok ? 'check_circle' : 'error'}
-                        </span>
-                        <div className="flex flex-col">
-                          <span className="font-body text-xs text-on-surface">{formatTimestamp(c.timestamp)}</span>
-                          <span className="font-body text-[11px] text-on-surface-variant">
-                            {c.ok ? `HTTP ${c.httpStatus} · ${c.responseTimeMs}ms` : c.error || 'Check failed'}
+                  {checks.map((c) => {
+                    const hasDiff = c.diffResult && c.diffResult.length > 0;
+                    const row = (
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-outline-variant bg-surface-container-lowest px-4 py-3 transition-colors hover:border-primary-container">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`material-symbols-outlined text-[18px] ${c.ok ? 'text-secondary' : 'text-error'}`}
+                          >
+                            {c.ok ? 'check_circle' : 'error'}
                           </span>
+                          <div className="flex flex-col">
+                            <span className="font-body text-xs text-on-surface">{formatTimestamp(c.timestamp)}</span>
+                            <span className="font-body text-[11px] text-on-surface-variant">
+                              {c.ok ? `HTTP ${c.httpStatus} · ${c.responseTimeMs}ms` : c.error || 'Check failed'}
+                            </span>
+                          </div>
                         </div>
+                        <DiffSummary diffResult={c.diffResult} />
                       </div>
-                      <DiffSummary diffResult={c.diffResult} />
-                    </div>
-                  ))}
+                    );
+
+                    return hasDiff ? (
+                      <Link key={c._id} to={`/dashboard/endpoints/${id}/diff/${c._id}`}>
+                        {row}
+                      </Link>
+                    ) : (
+                      <div key={c._id}>{row}</div>
+                    );
+                  })}
                 </div>
               )}
             </div>

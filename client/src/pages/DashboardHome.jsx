@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
+import { useToast } from '../context/useToast';
+import { useConfirm } from '../context/useConfirm';
 import { api } from '../lib/api';
 import { timeAgo, formatInterval } from '../lib/format';
 import StatusBadge from '../components/StatusBadge';
@@ -17,6 +19,9 @@ function StatCard({ label, value, color }) {
 
 export default function DashboardHome() {
   const { token, user } = useAuth();
+  const location = useLocation();
+  const toast = useToast();
+  const confirm = useConfirm();
 
   const [endpoints, setEndpoints] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +55,7 @@ export default function DashboardHome() {
     });
   }
 
-  async function handleCheckNow(id) {
+  async function handleCheckNow(id, name) {
     setActing(id, true);
     try {
       const result = await api.checkNow(token, id);
@@ -59,22 +64,25 @@ export default function DashboardHome() {
           ep._id === id ? { ...ep, status: result.status, lastCheckedAt: result.checkedAt } : ep
         )
       );
+      toast.success(`"${name}" checked - now ${result.status}.`);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setActing(id, false);
     }
   }
 
   async function handleDelete(id, name) {
-    if (!window.confirm(`Stop monitoring "${name}"? This cannot be undone.`)) return;
+    const ok = await confirm(`Stop monitoring "${name}"? This cannot be undone.`);
+    if (!ok) return;
 
     setActing(id, true);
     try {
       await api.deleteEndpoint(token, id);
       setEndpoints((prev) => prev.filter((ep) => ep._id !== id));
+      toast.success(`"${name}" is no longer being monitored.`);
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
       setActing(id, false);
     }
   }
@@ -84,6 +92,7 @@ export default function DashboardHome() {
     try {
       await Promise.all(endpoints.map((ep) => api.checkNow(token, ep._id).catch(() => null)));
       await loadEndpoints();
+      toast.success('All endpoints checked.');
     } finally {
       setCheckingAll(false);
     }
@@ -95,12 +104,13 @@ export default function DashboardHome() {
     broken: endpoints.filter((e) => e.status === 'broken').length,
   };
 
+  const displayName = user?.name || user?.email?.split('@')[0] || 'Developer';
+  const greeting = location.state?.justRegistered ? `Welcome, ${displayName}.` : `Welcome back, ${displayName}.`;
+
   return (
     <div className="relative mx-auto flex max-w-1440px flex-col gap-10 px-4 py-12 sm:px-10">
       <Reveal>
-        <h1 className="font-display text-3xl font-bold text-on-surface sm:text-4xl">
-          Welcome back, {user?.email?.split('@')[0] || 'Developer'}.
-        </h1>
+        <h1 className="font-display text-3xl font-bold text-on-surface sm:text-4xl">{greeting}</h1>
       </Reveal>
 
       <Reveal delay={80}>
@@ -162,10 +172,7 @@ export default function DashboardHome() {
               <div className="glass-panel flex h-full flex-col gap-4 p-6 transition-transform hover:-translate-y-1">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <Link
-                      to={`/dashboard/endpoints/${ep._id}`}
-                      className="block truncate font-display text-lg font-semibold text-on-surface hover:text-primary-container"
-                    >
+                    <Link to={`/dashboard/endpoints/${ep._id}`} className="block truncate font-display text-lg font-semibold text-on-surface hover:text-primary-container">
                       {ep.name}
                     </Link>
                     <p className="truncate font-body text-xs text-on-surface-variant">{ep.url}</p>
@@ -184,7 +191,7 @@ export default function DashboardHome() {
                   <span className="font-body text-xs text-on-surface-variant">{timeAgo(ep.lastCheckedAt)}</span>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleCheckNow(ep._id)}
+                      onClick={() => handleCheckNow(ep._id, ep.name)}
                       disabled={actingIds.has(ep._id)}
                       title="Check now"
                       className="flex h-8 w-8 items-center justify-center border-2 border-black bg-surface-container-high text-on-surface shadow-neo-sm transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50"

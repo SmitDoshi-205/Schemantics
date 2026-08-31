@@ -3,10 +3,16 @@ const generateToken = require('../utils/generateToken');
 
 async function register(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!email || !password) {
-      const err = new Error('Email and password are both required.');
+    if (!name || !email || !password) {
+      const err = new Error('Name, email, and password are all required.');
+      err.status = 400;
+      throw err;
+    }
+
+    if (typeof name !== 'string' || !name.trim()) {
+      const err = new Error('Name must be a non-empty string.');
       err.status = 400;
       throw err;
     }
@@ -18,10 +24,11 @@ async function register(req, res, next) {
       throw err;
     }
 
-    const user = await User.create({ email, password });
+    const user = await User.create({ name, email, password });
 
     res.status(201).json({
       id: user._id,
+      name : user.name,
       email: user.email,
       token: generateToken(user._id),
     });
@@ -50,6 +57,7 @@ async function login(req, res, next) {
 
     res.status(200).json({
       id: user._id,
+      name : user.name || user.email.split('@')[0], 
       email: user.email,
       token: generateToken(user._id),
     });
@@ -61,6 +69,7 @@ async function login(req, res, next) {
 async function getMe(req, res) {
   res.status(200).json({
     id: req.user._id,
+    name: req.user.name || req.user.email.split('@')[0],
     email: req.user.email,
     createdAt: req.user.createdAt,
     notifyEmail: req.user.notifyEmail,

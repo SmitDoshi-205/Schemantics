@@ -4,8 +4,10 @@ const {
   createEndpoint,
   listEndpoints,
   getEndpoint,
+  updateEndpoint,
   deleteEndpoint,
   checkNow,
+  resetBaseline
 } = require('../controllers/endpointController');
 const { listChecks, getCheckDiff } = require('../controllers/checkController');
 
@@ -15,11 +17,13 @@ const router = express.Router();
 router.use(protect);
 
 router.post('/', createEndpoint);
-router.post('/:id/check-now', checkNow);
 router.get('/', listEndpoints);
 router.get('/:id', getEndpoint);
+router.patch('/:id', updateEndpoint);
+router.delete('/:id', deleteEndpoint);
+router.post('/:id/check-now', checkNow);
+router.post('/:id/reset-baseline', resetBaseline);
 router.get('/:id/checks', listChecks);
 router.get('/:id/diff/:checkId', getCheckDiff);
-router.delete('/:id', deleteEndpoint);
 
 module.exports = router;

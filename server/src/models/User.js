@@ -1,20 +1,25 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
+    name: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     email: {
       type: String,
-      required: [true, 'Email is required'],
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
-      match: [/^\S+@\S+\.\S+$/, 'Enter a valid email address'],
+      match: [/^\S+@\S+\.\S+$/, "Enter a valid email address"],
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
-      minlength: [8, 'Password must be at least 8 characters'],
+      required: [true, "Password is required"],
+      minlength: [8, "Password must be at least 8 characters"],
       select: false, // never return password by default on queries
     },
     notifyEmail: {
@@ -26,11 +31,11 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
   },
-  { timestamps: true } // adds createdAt / updatedAt automatically
+  { timestamps: true }, // adds createdAt / updatedAt automatically
 );
 
-userSchema.pre('save', async function hashPassword(next) {
-  if (!this.isModified('password')) return next();
+userSchema.pre("save", async function hashPassword(next) {
+  if (!this.isModified("password")) return next();
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -41,8 +46,10 @@ userSchema.pre('save', async function hashPassword(next) {
   }
 });
 
-userSchema.methods.comparePassword = function comparePassword(candidatePassword) {
+userSchema.methods.comparePassword = function comparePassword(
+  candidatePassword,
+) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+module.exports = mongoose.model("User", userSchema);

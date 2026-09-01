@@ -54,4 +54,6 @@ export const api = {
 
   resetBaseline: (token, id) =>
     request(`/endpoints/${id}/reset-baseline`, { method: "POST", token }),
+
+  getBaseline: (token, id) => request(`/endpoints/${id}/baseline`, { token }),
 };

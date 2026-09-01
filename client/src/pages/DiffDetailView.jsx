@@ -7,31 +7,83 @@ import { api } from '../lib/api';
 import { formatTimestamp } from '../lib/format';
 import Reveal from '../components/Reveal';
 
-const CHANGE_ICON = { removed: '−', added: '+', type_changed: '~' };
-const CHANGE_LABEL = { removed: 'removed', added: 'added', type_changed: 'type changed' };
+const CHANGE_ICON = { removed: '−', added: '+', type_changed: '~', possible_rename: '⇄' };
+const CHANGE_LABEL = { removed: 'removed', added: 'added', type_changed: 'type changed', possible_rename: 'possible rename' };
 
 function DiffRow({ entry }) {
-  const isRemoved = entry.changeType === 'removed';
-  const isAdded = entry.changeType === 'added';
-  const color = isRemoved ? 'text-error' : isAdded ? 'text-secondary' : 'text-tertiary-container';
+  const color =
+    entry.changeType === 'removed' ? 'text-error'
+    : entry.changeType === 'added' ? 'text-secondary'
+    : entry.changeType === 'possible_rename' ? 'text-tertiary-container'
+    : 'text-tertiary-container';
 
   return (
-    <div className="flex items-center gap-4 border-t border-outline-variant px-5 py-3 font-body text-sm first:border-t-0">
-      <span className={`w-4 flex-none text-center font-bold ${color}`}>{CHANGE_ICON[entry.changeType]}</span>
-      <span className={`flex-1 font-semibold ${color}`}>{entry.path}</span>
-      <span className="text-xs text-on-surface-variant">
-        {entry.oldType && <span className="line-through">{entry.oldType}</span>}
-        {entry.oldType && entry.newType && ' → '}
-        {entry.newType && <span className="text-on-surface">{entry.newType}</span>}
-        {!entry.oldType && !entry.newType && CHANGE_LABEL[entry.changeType]}
-      </span>
-      <span
-        className={`border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-          entry.severity === 'breaking' ? 'border-error text-error' : 'border-tertiary-container text-tertiary-container'
-        }`}
-      >
-        {entry.severity}
-      </span>
+    <div className="border-t border-outline-variant px-5 py-3 font-body text-sm first:border-t-0">
+      <div className="flex items-center gap-4">
+        <span className={`w-4 flex-none text-center font-bold ${color}`}>{CHANGE_ICON[entry.changeType]}</span>
+        <span className={`flex-1 font-semibold ${color}`}>
+          {entry.changeType === 'possible_rename' ? `${entry.oldPath} → ${entry.newPath}` : entry.path}
+        </span>
+        <span className="text-xs text-on-surface-variant">
+          {entry.oldType && <span className="line-through">{entry.oldType}</span>}
+          {entry.oldType && entry.newType && ' → '}
+          {entry.newType && <span className="text-on-surface">{entry.newType}</span>}
+          {!entry.oldType && !entry.newType && CHANGE_LABEL[entry.changeType]}
+        </span>
+        <span
+          className={`border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+            entry.severity === 'breaking' ? 'border-error text-error' : 'border-tertiary-container text-tertiary-container'
+          }`}
+        >
+          {entry.severity}
+        </span>
+      </div>
+      {entry.changeType === 'possible_rename' && (
+        <p className="mt-2 flex items-start gap-2 border-l-2 border-tertiary-container bg-tertiary-container/5 py-2 pl-3 font-body text-xs text-on-surface-variant">
+          <span className="material-symbols-outlined text-[14px] text-tertiary-container">info</span>
+          Same type, single add/remove pairing. Heuristic guess, not certain.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function highlightedLines(prettyJson, diffResult) {
+  if (!prettyJson) return [];
+  const changedKeys = new Set();
+  diffResult.forEach((d) => {
+    [d.oldPath, d.newPath, d.path].forEach((p) => {
+      if (!p) return;
+      const segs = p.split(/[.[\]]/).filter(Boolean);
+      const last = segs[segs.length - 1];
+      if (last) changedKeys.add(last);
+    });
+  });
+
+  return prettyJson.split('\n').map((line, i) => {
+    const match = line.match(/"([a-zA-Z0-9_]+)"\s*:/);
+    const key = match?.[1];
+    return { key: i, line, isChanged: key && changedKeys.has(key) };
+  });
+}
+
+function JsonPane({ title, borderColor, json, diffResult }) {
+  const lines = highlightedLines(json, diffResult);
+  return (
+    <div className="glass-panel flex-1 overflow-hidden">
+      <div className={`border-b-2 border-black border-l-4 ${borderColor} bg-surface-variant px-5 py-3`}>
+        <span className="font-display text-xs uppercase tracking-wide text-on-surface">{title}</span>
+      </div>
+      <pre className="overflow-x-auto p-4 font-body text-xs leading-relaxed shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)]">
+        {lines.map((l) => (
+          <div
+            key={l.key}
+            className={l.isChanged ? 'border-l-2 border-drift-critical bg-error/10 pl-2 text-error' : 'pl-2.5 text-on-surface-variant'}
+          >
+            {l.line}
+          </div>
+        ))}
+      </pre>
     </div>
   );
 }
@@ -45,6 +97,7 @@ export default function DiffDetailView() {
 
   const [endpoint, setEndpoint] = useState(null);
   const [check, setCheck] = useState(null);
+  const [baseline, setBaseline] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [acting, setActing] = useState(false);
@@ -53,12 +106,14 @@ export default function DiffDetailView() {
     setLoading(true);
     setError('');
     try {
-      const [endpointData, checkData] = await Promise.all([
+      const [endpointData, checkData, baselineData] = await Promise.all([
         api.getEndpoint(token, id),
         api.getCheckDiff(token, id, checkId),
+        api.getBaseline(token, id).catch(() => null),
       ]);
       setEndpoint(endpointData);
       setCheck(checkData);
+      setBaseline(baselineData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,11 +128,10 @@ export default function DiffDetailView() {
   async function handleAcceptBaseline() {
     if (!endpoint) return;
     const ok = await confirm(
-      `Accept the current response shape as the new baseline for "${endpoint.name}"? This diff will remain in history, but future checks will compare against the new shape.`,
+      `Accept the current response shape as the new baseline for "${endpoint.name}"? This diff stays in history, but future checks compare against the new shape.`,
       { danger: false }
     );
     if (!ok) return;
-
     setActing(true);
     try {
       await api.resetBaseline(token, id);
@@ -91,7 +145,7 @@ export default function DiffDetailView() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex max-w-1000px items-center justify-center px-4 py-24 sm:px-10">
+      <div className="mx-auto flex max-w-1100px items-center justify-center px-4 py-24 sm:px-10">
         <span className="font-body text-sm text-on-surface-variant">Loading diff...</span>
       </div>
     );
@@ -99,7 +153,7 @@ export default function DiffDetailView() {
 
   if (error || !check) {
     return (
-      <div className="mx-auto flex max-w-1000px flex-col items-center gap-4 px-4 py-24 text-center sm:px-10">
+      <div className="mx-auto flex max-w-1100px flex-col items-center gap-4 px-4 py-24 text-center sm:px-10">
         <p className="border-2 border-error bg-error-container/20 px-4 py-3 font-body text-sm text-error">
           {error || 'Check not found.'}
         </p>
@@ -114,22 +168,18 @@ export default function DiffDetailView() {
   const warning = check.diffResult.filter((d) => d.severity === 'warning');
   const isBreaking = breaking.length > 0;
 
-  let prettySample = check.rawResponseSample;
+  let capturedPretty = check.rawResponseSample;
   try {
-    prettySample = JSON.stringify(JSON.parse(check.rawResponseSample), null, 2);
+    capturedPretty = JSON.stringify(JSON.parse(check.rawResponseSample), null, 2);
   } catch {
-    // not valid JSON (e.g. truncated) - fall back to showing it raw
+    // not valid JSON (truncated) - show raw
   }
+  const baselinePretty = baseline ? JSON.stringify(baseline.sampleResponse, null, 2) : null;
 
   return (
-    <div className="mx-auto flex max-w-1000px flex-col gap-8 px-4 py-12 sm:px-10">
-      <Link
-        to={`/dashboard/endpoints/${id}`}
-        className="group inline-flex w-fit items-center gap-2 font-body text-sm text-outline transition-colors hover:text-primary"
-      >
-        <span className="material-symbols-outlined text-[18px] transition-transform group-hover:-translate-x-1">
-          arrow_back
-        </span>
+    <div className="mx-auto flex max-w-1100px flex-col gap-8 px-4 py-12 sm:px-10">
+      <Link to={`/dashboard/endpoints/${id}`} className="group inline-flex w-fit items-center gap-2 font-body text-sm text-outline transition-colors hover:text-primary">
+        <span className="material-symbols-outlined text-[18px] transition-transform group-hover:-translate-x-1">arrow_back</span>
         Back to {endpoint?.name || 'Endpoint'}
       </Link>
 
@@ -143,42 +193,24 @@ export default function DiffDetailView() {
               Detected {formatTimestamp(check.timestamp)} · Check #{check._id.slice(-6)}
             </p>
           </div>
-          <button
-            onClick={handleAcceptBaseline}
-            disabled={acting}
-            className="neo-button flex-none px-6 py-3 font-display text-xs font-bold uppercase disabled:opacity-60"
-          >
+          <button onClick={handleAcceptBaseline} disabled={acting} className="neo-button flex-none px-6 py-3 font-display text-xs font-bold uppercase disabled:opacity-60">
             {acting ? 'Working...' : 'Accept as Baseline'}
           </button>
         </div>
       </Reveal>
 
       <Reveal delay={80}>
-        <div
-          className={`glass-panel flex items-start gap-4 border-l-4 p-6 ${
-            isBreaking ? 'border-l-error' : 'border-l-tertiary-container'
-          }`}
-        >
-          <span className={`material-symbols-outlined mt-1 text-2xl ${isBreaking ? 'text-error' : 'text-tertiary-container'}`}>
-            warning
-          </span>
+        <div className={`glass-panel flex items-start gap-4 border-l-4 p-6 ${isBreaking ? 'border-l-error' : 'border-l-tertiary-container'}`}>
+          <span className={`material-symbols-outlined mt-1 text-2xl ${isBreaking ? 'text-error' : 'text-tertiary-container'}`}>warning</span>
           <div>
-            <div className="mb-1 flex items-center gap-3">
-              <span className={`font-display text-lg font-bold ${isBreaking ? 'text-error' : 'text-tertiary-container'}`}>
-                {isBreaking ? 'BREAKING SEVERITY' : 'WARNING SEVERITY'}
-              </span>
-            </div>
-            <p className="font-body text-sm text-on-surface">
-              {breaking.length > 0 && `${breaking.length} breaking change${breaking.length > 1 ? 's' : ''}`}
+            <span className={`font-display text-lg font-bold ${isBreaking ? 'text-error' : 'text-tertiary-container'}`}>
+              {isBreaking ? 'BREAKING SEVERITY' : 'WARNING SEVERITY'}
+            </span>
+            <p className="mt-1 font-body text-sm text-on-surface">
+              {breaking.length > 0 && `${breaking.length} breaking`}
               {breaking.length > 0 && warning.length > 0 && ', '}
-              {warning.length > 0 && `${warning.length} warning${warning.length > 1 ? 's' : ''}`} detected in this
-              response.
+              {warning.length > 0 && `${warning.length} warning`} change{check.diffResult.length > 1 ? 's' : ''} detected.
             </p>
-            {isBreaking && (
-              <p className="mt-2 font-body text-sm text-on-surface-variant">
-                This change violates the current API contract and may cause downstream failures.
-              </p>
-            )}
           </div>
         </div>
       </Reveal>
@@ -188,22 +220,22 @@ export default function DiffDetailView() {
           <div className="border-b-2 border-black bg-surface-variant px-5 py-3">
             <span className="font-display text-xs uppercase tracking-wide text-on-surface">Field Changes</span>
           </div>
-          {check.diffResult.map((entry) => (
-            <DiffRow key={entry.path} entry={entry} />
+          {check.diffResult.map((entry, i) => (
+            <DiffRow key={entry.path + i} entry={entry} />
           ))}
         </div>
       </Reveal>
 
       <Reveal delay={200}>
-        <div className="glass-panel overflow-hidden">
-          <div className="border-b-2 border-black bg-surface-variant px-5 py-3">
-            <span className="font-display text-xs uppercase tracking-wide text-on-surface">
-              Response Sample at Time of Check
-            </span>
+        <div>
+          <h2 className="mb-4 font-display text-lg font-semibold text-on-surface">Baseline vs. Captured Response</h2>
+          <div className="flex flex-col gap-6 lg:flex-row">
+            <JsonPane title="BASELINE (expected)" borderColor="border-l-secondary" json={baselinePretty} diffResult={check.diffResult} />
+            <JsonPane title="CAPTURED (this check)" borderColor={`border-l-${isBreaking ? 'error' : 'tertiary-container'}`} json={capturedPretty} diffResult={check.diffResult} />
           </div>
-          <pre className="overflow-x-auto p-5 font-body text-xs leading-relaxed text-on-surface-variant shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)]">
-            {prettySample}
-          </pre>
+          {!baseline && (
+            <p className="mt-3 font-body text-xs text-on-surface-variant">Baseline sample unavailable for this endpoint.</p>
+          )}
         </div>
       </Reveal>
     </div>

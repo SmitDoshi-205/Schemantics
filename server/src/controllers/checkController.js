@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Endpoint = require('../models/Endpoint');
 const Check = require('../models/Check');
+const Baseline = require('../models/Baseline');
 
 function isValidId(id) {
   return mongoose.Types.ObjectId.isValid(id);
@@ -63,4 +64,33 @@ async function getCheckDiff(req, res, next) {
   }
 }
 
-module.exports = { listChecks, getCheckDiff };
+async function getBaseline(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!isValidId(id)) {
+      const err = new Error('Invalid endpoint id.');
+      err.status = 400;
+      throw err;
+    }
+
+    const endpoint = await Endpoint.findOne({ _id: id, userId: req.user._id });
+    if (!endpoint) {
+      const err = new Error('Endpoint not found.');
+      err.status = 404;
+      throw err;
+    }
+
+    const baseline = await Baseline.findOne({ endpointId: id });
+    if (!baseline) {
+      const err = new Error('No baseline captured yet.');
+      err.status = 404;
+      throw err;
+    }
+
+    res.status(200).json(baseline);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { listChecks, getCheckDiff, getBaseline };

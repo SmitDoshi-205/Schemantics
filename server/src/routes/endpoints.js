@@ -9,7 +9,7 @@ const {
   checkNow,
   resetBaseline
 } = require('../controllers/endpointController');
-const { listChecks, getCheckDiff } = require('../controllers/checkController');
+const { listChecks, getCheckDiff, getBaseline } = require('../controllers/checkController');
 
 const router = express.Router();
 
@@ -25,5 +25,6 @@ router.post('/:id/check-now', checkNow);
 router.post('/:id/reset-baseline', resetBaseline);
 router.get('/:id/checks', listChecks);
 router.get('/:id/diff/:checkId', getCheckDiff);
+router.get('/:id/baseline', getBaseline);
 
 module.exports = router;

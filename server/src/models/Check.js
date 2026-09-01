@@ -5,9 +5,11 @@ const diffEntrySchema = new mongoose.Schema(
     path: { type: String, required: true },
     changeType: {
       type: String,
-      enum: ['added', 'removed', 'type_changed'],
+      enum: ['added', 'removed', 'type_changed', 'possible_rename'],
       required: true,
     },
+    oldPath: { type: String, default: null },
+    newPath: { type: String, default: null },
     oldType: { type: String, default: null },
     newType: { type: String, default: null },
     severity: {

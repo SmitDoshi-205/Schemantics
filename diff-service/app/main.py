@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from app.schema_comparator import DiffEntry, compare_schemas
 from app.schema_extractor import extract_schema
 from app.severity import with_severity
+from app.rename_heuristic import apply_rename_heuristic
 
 app = FastAPI(
     title="Schemantics Diff Service",
@@ -29,3 +30,10 @@ def diff(request: DiffRequest) -> List[dict]:
     new_schema = extract_schema(request.newResponseJson)
     raw_diffs = compare_schemas(request.baselineSchema, new_schema)
     return with_severity(raw_diffs)
+
+@app.post("/diff")
+def diff(request: DiffRequest) -> List[dict]:   
+    new_schema = extract_schema(request.newResponseJson)
+    raw_diffs = compare_schemas(request.baselineSchema, new_schema)
+    diffs_with_severity = with_severity(raw_diffs)
+    return apply_rename_heuristic(diffs_with_severity)

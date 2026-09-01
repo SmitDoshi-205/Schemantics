@@ -21,6 +21,9 @@ export default function Footer() {
               <a href="/#severity" className="font-body text-sm text-on-surface-variant transition-colors hover:text-tertiary">
                 Severity
               </a>
+              <a href="/#for" className="font-body text-sm text-on-surface-variant transition-colors hover:text-tertiary">
+                Built For
+              </a>
             </>
           )}
           <a

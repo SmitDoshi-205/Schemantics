@@ -1,8 +1,15 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const GITHUB_URL = 'https://github.com/SmitDoshi-205/Schemantics';
 
 export default function AuthLayout() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [location.pathname]);
+
   return (
     <div className="cyber-grid relative flex min-h-dvh flex-col bg-surface overflow-hidden">
       <div

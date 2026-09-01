@@ -59,6 +59,12 @@ export default function Nav() {
                 Severity
               </a>
               <a
+                href="/#for"
+                className="font-display text-[11px] uppercase tracking-0.1em text-on-surface-variant transition-all hover:translate-x-1 hover:translate-y-1 hover:text-primary"
+              >
+                Built For
+              </a>
+              <a
                 href={GITHUB_URL}
                 target="_blank"
                 rel="noopener noreferrer"

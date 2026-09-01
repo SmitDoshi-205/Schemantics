@@ -116,9 +116,16 @@ export default function Landing() {
       </section>
 
       {/* ---------------- CORE CAPABILITIES ---------------- */}
-      <section id="how" className="flex flex-col gap-12 pt-8">
+      <section id="how" className="flex flex-col gap-2 pt-8 scroll-mt-20">
         <Reveal>
-          <SectionHeading>Core Capabilities</SectionHeading>
+          <div className="mb-14 max-w-xl">
+            <h2 className="font-display text-2xl font-bold uppercase text-on-surface sm:text-3xl">
+              Core capabilities
+            </h2>
+            <p className="mt-4 max-w-lg font-body text-sm text-on-surface-variant">
+              Most schema drift never shows up in logs. It hides in silent contract changes, renamed fields, type mismatches, and payloads that still return 200. Schemantics watches for the changes that break real consumers, so your team can act before the API contract drifts and your users feel it.
+            </p>
+          </div>
         </Reveal>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
@@ -222,10 +229,108 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ---------------- WHY SCHEMANTICS ---------------- */}
-      <section className="flex flex-col gap-12 pt-8">
+      {/* ---------------- SEVERITY ---------------- */}
+      <section id="severity" className="flex flex-col gap-2 pt-8 scroll-mt-20">
         <Reveal>
-          <SectionHeading>Why Schemantics?</SectionHeading>
+          <div className="mb-14 max-w-xl">
+            <h2 className="font-display text-2xl font-bold uppercase text-on-surface sm:text-3xl">
+              Every change gets classified.
+            </h2>
+            <p className="mt-4 max-w-lg font-body text-sm text-on-surface-variant">
+              Not every diff deserves a 2am page. Here's exactly how Schemantics
+              rates what it finds.
+            </p>
+          </div>
+        </Reveal>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {[
+            {
+              title: "Breaking",
+              chip: "HIGH",
+              chipBg: "bg-error",
+              chipText: "text-on-error",
+              titleColor: "text-error",
+              body: "Catastrophic mutations that break downstream consumers. Includes field removals or data type changes.",
+              items: [
+                { icon: "cancel", label: "FIELD_REMOVED" },
+                { icon: "report", label: "TYPE_MISMATCH" },
+              ],
+            },
+            {
+              title: "Warning",
+              chip: "MEDIUM",
+              chipBg: "bg-tertiary-container",
+              chipText: "text-on-tertiary-container",
+              titleColor: "text-tertiary-container",
+              body: "Non-breaking but significant changes. Includes new fields added or potential property renames.",
+              items: [
+                { icon: "warning", label: "NEW_FIELD_ADDED" },
+                { icon: "compare_arrows", label: "RENAME_DETECTED" },
+              ],
+            },
+            {
+              title: "Info",
+              chip: "LOW",
+              chipBg: "bg-primary-container",
+              chipText: "text-on-primary-container",
+              titleColor: "text-primary",
+              body: "Safe updates with no structural impact. Only data values differ from the established baseline.",
+              items: [
+                { icon: "info", label: "VALUE_DRIFT" },
+                { icon: "check_circle", label: "SCHEMA_STABLE" },
+              ],
+            },
+          ].map((s, i) => (
+            <Reveal key={s.title} delay={i * 120}>
+              <div className="glass-panel flex h-full flex-col gap-4 p-6">
+                <div className="flex items-center justify-between">
+                  <h3
+                    className={`font-display text-xl font-bold ${s.titleColor}`}
+                  >
+                    {s.title}
+                  </h3>
+                  <span
+                    className={`border-2 border-black px-2 py-0.5 font-body text-[10px] font-bold uppercase shadow-neo-sm ${s.chipBg} ${s.chipText}`}
+                  >
+                    {s.chip}
+                  </span>
+                </div>
+                <p className="font-body text-sm text-on-surface-variant">
+                  {s.body}
+                </p>
+                <div className="mt-2 flex flex-col gap-2 border-2 border-black bg-surface-container-lowest p-4">
+                  {s.items.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center gap-2 font-body text-xs text-on-surface"
+                    >
+                      <span
+                        className={`material-symbols-outlined text-[16px] ${s.titleColor}`}
+                      >
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ---------------- WHY SCHEMANTICS ---------------- */}
+      <section className="flex flex-col gap-2 pt-8">
+        <Reveal>
+          <div className="mb-14 max-w-xl">
+            <h2 className="font-display text-2xl font-bold uppercase text-on-surface sm:text-3xl">
+              why Schemantics?
+            </h2>
+            <p className="mt-4 max-w-lg font-body text-sm text-on-surface-variant">
+              Because uptime is not enough. We monitor the contract behind the response, so your team sees drift before users do.
+            </p>
+          </div>
         </Reveal>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {[
@@ -278,10 +383,10 @@ export default function Landing() {
       </section>
 
       {/* ---------------- BUILT FOR ---------------- */}
-      <section id="severity" className="flex flex-col gap-12 pt-8 pb-8">
+      <section id="for" className="flex flex-col gap-12 pt-8 pb-8 scroll-mt-20">
         <Reveal>
           <div className="flex flex-col gap-4">
-            <div className="w-fit border-2 border-primary-container bg-surface-container px-3 py-1 font-display text-[11px] uppercase tracking-tight text-primary shadow-neo">
+            <div className="w-fit border-2 border-primary-container bg-surface-container px-3 py-1 font-display text-[14px] uppercase tracking-tight text-primary shadow-neo">
               Built for
             </div>
             <div className="flex items-center gap-4">

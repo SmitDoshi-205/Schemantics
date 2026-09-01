@@ -215,14 +215,6 @@ export default function DashboardHome() {
           ))}
         </div>
       )}
-
-      <Link
-        to="/dashboard/add"
-        className="absolute bottom-10 right-10 z-40 flex h-14 w-14 items-center justify-center border-2 border-black bg-primary-container text-on-primary-container shadow-neo-lg transition-all duration-100 hover:translate-x-1 hover:translate-y-1 hover:shadow-neo-sm"
-        title="Add endpoint"
-      >
-        <span className="material-symbols-outlined text-[28px]">add</span>
-      </Link>
     </div>
   );
 }

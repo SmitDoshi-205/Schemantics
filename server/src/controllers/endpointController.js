@@ -38,7 +38,7 @@ async function createEndpoint(req, res, next) {
 async function listEndpoints(req, res, next) {
   try {
     const endpoints = await Endpoint.find({ userId: req.user._id }).sort({
-      createdAt: -1,
+      createdAt: 1, _id: 1
     });
     res.status(200).json(endpoints);
   } catch (err) {

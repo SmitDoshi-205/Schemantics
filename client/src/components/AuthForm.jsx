@@ -198,12 +198,12 @@ return (
           {/* Login: Forgot password */}
           {isLogin ? (
             <div className="mt-1 flex justify-end">
-              <a
-                href="#"
+              <Link
+                to="/forgot-password "
                 className="font-body text-xs text-primary-container underline decoration-1 underline-offset-4 transition-colors hover:text-primary"
               >
                 Forgot Clearance?
-              </a>
+              </Link>
             </div>
           ) : (
             /* Register: Password strength */

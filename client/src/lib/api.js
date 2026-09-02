@@ -21,10 +21,16 @@ async function request(path, { method = "GET", body, token } = {}) {
 
 export const api = {
   register: (name, email, password) =>
-    request("/auth/register", { method: "POST", body: { name, email, password } }),
+    request("/auth/register", { method: "POST", body: { name, email, password }, }),
 
   login: (email, password) =>
     request("/auth/login", { method: "POST", body: { email, password } }),
+
+  forgotPassword: (email) =>
+    request("/auth/forgot-password", { method: "POST", body: { email } }),
+
+  resetPassword: (token, password) =>
+    request("/auth/reset-password", { method: "POST", body: { token, password } }),
 
   me: (token) => request("/auth/me", { token }),
 

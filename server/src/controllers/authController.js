@@ -1,5 +1,7 @@
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
+const {sendEmailAlert} = require('../services/notificationService');
+const crypto = require('crypto');
 
 async function register(req, res, next) {
   try {
@@ -77,6 +79,71 @@ async function getMe(req, res) {
   });
 }
 
+async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      const err = new Error('Email is required.');
+      err.status = 400;
+      throw err;
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    // Always respond the same way whether or not the email exists -
+    // don't leak which emails are registered.
+    if (user) {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+      user.resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await user.save();
+
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${rawToken}`;
+      await sendEmailAlert({
+        to: user.email,
+        endpointName: 'Password Reset',
+        status: 'requested',
+        diff: [{ path: 'reset_link', changeType: 'added', oldType: null, newType: resetUrl, severity: 'info' }],
+      }).catch(() => {}); // never let email failure block the response
+    }
+
+    res.status(200).json({ message: 'If that email exists, a reset link has been sent.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function resetPassword(req, res, next) {
+  try {
+    const { token, password } = req.body;
+    if (!token || !password) {
+      const err = new Error('Token and new password are required.');
+      err.status = 400;
+      throw err;
+    }
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: new Date() },
+    }).select('+resetPasswordToken +resetPasswordExpires');
+
+    if (!user) {
+      const err = new Error('Reset link is invalid or has expired.');
+      err.status = 400;
+      throw err;
+    }
+
+    user.password = password; // pre-save hook rehashes it
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successfully.' });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function updateNotificationSettings(req, res, next) {
   try {
     const { notifyEmail, webhookUrl } = req.body;
@@ -119,4 +186,4 @@ async function updateNotificationSettings(req, res, next) {
   }
 }
 
-module.exports = { register, login, getMe, updateNotificationSettings };
+module.exports = { register, login, getMe,forgotPassword, resetPassword, updateNotificationSettings };

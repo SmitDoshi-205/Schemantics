@@ -3,17 +3,28 @@ const Check = require('../models/Check');
 const User = require('../models/User');
 const { performCheck } = require('./checkerService');
 const { requestDiff } = require('./diffService');
-const {  sendEmailAlert, sendWebhookAlert } = require('./notificationService');
+const { sendEmailAlert, sendWebhookAlert } = require('./notificationService');
 
 const MAX_SAMPLE_LENGTH = 50000;
+const MAX_RESPONSE_SIZE = 2_000_000; 
 
 async function runCheckForEndpoint(endpoint) {
   const result = await performCheck(endpoint);
 
   let diff = null;
   let baselineCaptured = false;
+  let syntheticError = null;
 
-  if (result.ok) {
+  const httpError = result.ok && result.httpStatus >= 400;
+  const bodyTooLarge = result.ok && result.responseSample && result.responseSample.length > MAX_RESPONSE_SIZE;
+
+  if (result.ok && httpError) {
+    endpoint.status = 'broken';
+    syntheticError = `Endpoint returned HTTP ${result.httpStatus} - not diffed.`;
+  } else if (result.ok && bodyTooLarge) {
+    endpoint.status = 'broken';
+    syntheticError = 'Response body too large to safely diff (>2MB).';
+  } else if (result.ok) {
     let baseline = await Baseline.findOne({ endpointId: endpoint._id });
 
     if (!baseline) {
@@ -37,7 +48,6 @@ async function runCheckForEndpoint(endpoint) {
         diff = rawDiff;
         const hasBreaking = diff.some((d) => d.severity === 'breaking');
         endpoint.status = hasBreaking ? 'broken' : 'drifted';
-
         await notifyUserOfDrift(endpoint, diff);
       }
     }
@@ -55,7 +65,7 @@ async function runCheckForEndpoint(endpoint) {
     responseTimeMs: result.responseTimeMs,
     rawResponseSample: result.responseSample,
     ok: result.ok,
-    error: result.error,
+    error: result.error || syntheticError,
     diffResult: diff,
   });
 
@@ -78,23 +88,11 @@ async function notifyUserOfDrift(endpoint, diff) {
   try {
     const user = await User.findById(endpoint.userId);
     if (!user) return;
-
     if (user.notifyEmail) {
-      await sendEmailAlert({
-        to: user.email,
-        endpointName: endpoint.name,
-        status: endpoint.status,
-        diff,
-      });
+      await sendEmailAlert({ to: user.email, endpointName: endpoint.name, status: endpoint.status, diff });
     }
-
     if (user.webhookUrl) {
-      await sendWebhookAlert({
-        webhookUrl: user.webhookUrl,
-        endpointName: endpoint.name,
-        status: endpoint.status,
-        diff,
-      });
+      await sendWebhookAlert({ webhookUrl: user.webhookUrl, endpointName: endpoint.name, status: endpoint.status, diff });
     }
   } catch (err) {
     console.error('[notifications] Unexpected error while notifying user:', err.message);

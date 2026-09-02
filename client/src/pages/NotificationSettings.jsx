@@ -4,6 +4,7 @@ import { useAuth } from '../context/useAuth';
 import { useToast } from '../context/useToast';
 import { api } from '../lib/api';
 import Reveal from '../components/Reveal';
+import Skeleton from '../components/Skeleton';
 
 export default function NotificationSettings() {
   const { token } = useAuth();
@@ -47,9 +48,13 @@ export default function NotificationSettings() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex max-w-700px items-center justify-center px-4 py-24 sm:px-10">
-        <span className="font-body text-sm text-on-surface-variant">Loading settings...</span>
+      <div className="mx-auto max-w-[700px] px-4 py-12 sm:px-10">
+      <Skeleton className="mb-8 h-8 w-64" />
+      <div className="glass-panel flex flex-col gap-8 p-8">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
       </div>
+    </div>
     );
   }
 

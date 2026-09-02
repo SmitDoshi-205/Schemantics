@@ -1,23 +1,28 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useAuth } from '../context/useAuth';
-import { useToast } from '../context/useToast';
-import { useConfirm } from '../context/useConfirm';
-import { api } from '../lib/api';
-import { timeAgo, formatInterval, formatTimestamp } from '../lib/format';
-import StatusBadge from '../components/StatusBadge';
-import ResponseTimeChart from '../components/ResponseTimeChart';
-import Reveal from '../components/Reveal';
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
+import { useConfirm } from "../context/useConfirm";
+import { api } from "../lib/api";
+import { timeAgo, formatInterval, formatTimestamp } from "../lib/format";
+import StatusBadge from "../components/StatusBadge";
+import ResponseTimeChart from "../components/ResponseTimeChart";
+import Reveal from "../components/Reveal";
+import Skeleton from "../components/Skeleton";
 
 const INTERVAL_STEPS = [1, 5, 15, 60];
-const INTERVAL_LABELS = ['1m', '5m', '15m', '1h'];
+const INTERVAL_LABELS = ["1m", "5m", "15m", "1h"];
 
 function DiffSummary({ diffResult }) {
   if (!diffResult || diffResult.length === 0) {
-    return <span className="font-body text-xs text-on-surface-variant">No changes</span>;
+    return (
+      <span className="font-body text-xs text-on-surface-variant">
+        No changes
+      </span>
+    );
   }
-  const breaking = diffResult.filter((d) => d.severity === 'breaking').length;
-  const warning = diffResult.filter((d) => d.severity === 'warning').length;
+  const breaking = diffResult.filter((d) => d.severity === "breaking").length;
+  const warning = diffResult.filter((d) => d.severity === "warning").length;
 
   return (
     <div className="flex gap-2">
@@ -44,18 +49,18 @@ function EditEndpointForm({ endpoint, onCancel, onSaved }) {
     return idx === -1 ? 1 : idx;
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   async function handleSave(e) {
     e.preventDefault();
-    setError('');
+    setError("");
     setSaving(true);
     try {
       const updated = await api.updateEndpoint(token, endpoint._id, {
         name,
         checkIntervalMinutes: INTERVAL_STEPS[intervalIndex],
       });
-      toast.success('Endpoint updated.');
+      toast.success("Endpoint updated.");
       onSaved(updated);
     } catch (err) {
       setError(err.message);
@@ -67,7 +72,10 @@ function EditEndpointForm({ endpoint, onCancel, onSaved }) {
   return (
     <form onSubmit={handleSave} className="glass-panel flex flex-col gap-5 p-6">
       <div className="flex flex-col gap-2">
-        <label htmlFor="edit-name" className="font-display text-[11px] uppercase tracking-0.1em text-secondary">
+        <label
+          htmlFor="edit-name"
+          className="font-display text-[11px] uppercase tracking-0.1em text-secondary"
+        >
           Node Alias // Name
         </label>
         <input
@@ -83,7 +91,9 @@ function EditEndpointForm({ endpoint, onCancel, onSaved }) {
       <div className="flex flex-col gap-3">
         <label className="flex items-center justify-between font-display text-[11px] uppercase tracking-0.1em text-secondary">
           <span>Polling Frequency // Interval</span>
-          <span className="font-body text-xs text-primary">{INTERVAL_LABELS[intervalIndex]}</span>
+          <span className="font-body text-xs text-primary">
+            {INTERVAL_LABELS[intervalIndex]}
+          </span>
         </label>
         <input
           type="range"
@@ -102,11 +112,17 @@ function EditEndpointForm({ endpoint, onCancel, onSaved }) {
       </div>
 
       {error && (
-        <div className="border-2 border-error bg-error-container/20 px-4 py-3 font-body text-xs text-error">{error}</div>
+        <div className="border-2 border-error bg-error-container/20 px-4 py-3 font-body text-xs text-error">
+          {error}
+        </div>
       )}
 
       <div className="flex justify-end gap-3">
-        <button type="button" onClick={onCancel} className="neo-button-secondary px-4 py-2 font-display text-xs uppercase">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="neo-button-secondary px-4 py-2 font-display text-xs uppercase"
+        >
           Cancel
         </button>
         <button
@@ -114,7 +130,7 @@ function EditEndpointForm({ endpoint, onCancel, onSaved }) {
           disabled={saving}
           className="neo-button px-4 py-2 font-display text-xs font-bold uppercase disabled:opacity-60"
         >
-          {saving ? 'Saving...' : 'Save Changes'}
+          {saving ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </form>
@@ -131,13 +147,13 @@ export default function EndpointDetail() {
   const [endpoint, setEndpoint] = useState(null);
   const [checks, setChecks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [acting, setActing] = useState(false);
   const [editing, setEditing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const [endpointData, checksData] = await Promise.all([
         api.getEndpoint(token, id),
@@ -161,7 +177,7 @@ export default function EndpointDetail() {
     try {
       await api.checkNow(token, id);
       await load();
-      toast.success('Check complete.');
+      toast.success("Check complete.");
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -171,14 +187,16 @@ export default function EndpointDetail() {
 
   async function handleDelete() {
     if (!endpoint) return;
-    const ok = await confirm(`Stop monitoring "${endpoint.name}"? This cannot be undone.`);
+    const ok = await confirm(
+      `Stop monitoring "${endpoint.name}"? This cannot be undone.`,
+    );
     if (!ok) return;
 
     setActing(true);
     try {
       await api.deleteEndpoint(token, id);
       toast.success(`"${endpoint.name}" is no longer being monitored.`);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (err) {
       toast.error(err.message);
       setActing(false);
@@ -189,7 +207,7 @@ export default function EndpointDetail() {
     if (!endpoint) return;
     const ok = await confirm(
       `Accept the current response shape as the new baseline for "${endpoint.name}"? Past drift history is kept, but future checks compare against this new shape.`,
-      { danger: false }
+      { danger: false },
     );
     if (!ok) return;
 
@@ -197,7 +215,7 @@ export default function EndpointDetail() {
     try {
       await api.resetBaseline(token, id);
       await load();
-      toast.success('Baseline reset - new shape captured.');
+      toast.success("Baseline reset - new shape captured.");
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -207,8 +225,14 @@ export default function EndpointDetail() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex max-w-1200px items-center justify-center px-4 py-24 sm:px-10">
-        <span className="font-body text-sm text-on-surface-variant">Loading endpoint...</span>
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-4 py-12 sm:px-10">
+        <Skeleton className="h-5 w-40" />
+        <div className="flex justify-between">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-96" />
+        </div>
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
@@ -216,8 +240,13 @@ export default function EndpointDetail() {
   if (error && !endpoint) {
     return (
       <div className="mx-auto flex max-w-1200px flex-col items-center gap-4 px-4 py-24 text-center sm:px-10">
-        <p className="border-2 border-error bg-error-container/20 px-4 py-3 font-body text-sm text-error">{error}</p>
-        <Link to="/dashboard" className="neo-button-secondary px-4 py-2 font-display text-xs uppercase">
+        <p className="border-2 border-error bg-error-container/20 px-4 py-3 font-body text-sm text-error">
+          {error}
+        </p>
+        <Link
+          to="/dashboard"
+          className="neo-button-secondary px-4 py-2 font-display text-xs uppercase"
+        >
           Back to Dashboard
         </Link>
       </div>
@@ -252,14 +281,18 @@ export default function EndpointDetail() {
           <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-4">
-                <h1 className="font-display text-2xl font-bold text-on-surface sm:text-3xl">{endpoint.name}</h1>
+                <h1 className="font-display text-2xl font-bold text-on-surface sm:text-3xl">
+                  {endpoint.name}
+                </h1>
                 <StatusBadge status={endpoint.status} />
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <span className="border-2 border-black bg-tertiary-container px-2 py-0.5 font-body text-xs font-bold text-on-tertiary-container">
                   {endpoint.method}
                 </span>
-                <span className="break-all font-body text-sm text-on-surface-variant">{endpoint.url}</span>
+                <span className="break-all font-body text-sm text-on-surface-variant">
+                  {endpoint.url}
+                </span>
               </div>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -268,7 +301,9 @@ export default function EndpointDetail() {
                 disabled={acting}
                 className="neo-button-secondary flex items-center gap-2 px-4 py-2 font-display text-xs uppercase disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[16px]">edit</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  edit
+                </span>
                 Edit
               </button>
               <button
@@ -276,7 +311,9 @@ export default function EndpointDetail() {
                 disabled={acting}
                 className="neo-button-secondary flex items-center gap-2 px-4 py-2 font-display text-xs uppercase disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[16px]">history_edu</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  history_edu
+                </span>
                 Reset Baseline
               </button>
               <button
@@ -284,7 +321,9 @@ export default function EndpointDetail() {
                 disabled={acting}
                 className="neo-button-secondary flex items-center gap-2 px-4 py-2 font-display text-xs uppercase text-error disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[16px]">delete</span>
+                <span className="material-symbols-outlined text-[16px]">
+                  delete
+                </span>
                 Delete
               </button>
               <button
@@ -292,8 +331,10 @@ export default function EndpointDetail() {
                 disabled={acting}
                 className="neo-button flex items-center gap-2 px-4 py-2 font-display text-xs font-bold uppercase disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-[16px]">play_arrow</span>
-                {acting ? 'Working...' : 'Check Now'}
+                <span className="material-symbols-outlined text-[16px]">
+                  play_arrow
+                </span>
+                {acting ? "Working..." : "Check Now"}
               </button>
             </div>
           </div>
@@ -311,7 +352,9 @@ export default function EndpointDetail() {
           <Reveal delay={80}>
             <div className="glass-panel p-6">
               <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold text-on-surface">
-                <span className="material-symbols-outlined text-primary-container">monitoring</span>
+                <span className="material-symbols-outlined text-primary-container">
+                  monitoring
+                </span>
                 Response Metrics
               </h2>
               <ResponseTimeChart checks={checks} />
@@ -321,12 +364,16 @@ export default function EndpointDetail() {
           <Reveal delay={140}>
             <div className="glass-panel p-6">
               <h2 className="mb-4 flex items-center gap-2 font-display text-lg font-semibold text-on-surface">
-                <span className="material-symbols-outlined text-primary-container">history</span>
+                <span className="material-symbols-outlined text-primary-container">
+                  history
+                </span>
                 Check History
               </h2>
 
               {checks.length === 0 ? (
-                <p className="font-body text-sm text-on-surface-variant">No checks recorded yet.</p>
+                <p className="font-body text-sm text-on-surface-variant">
+                  No checks recorded yet.
+                </p>
               ) : (
                 <div className="flex flex-col gap-3">
                   {checks.map((c) => {
@@ -335,14 +382,28 @@ export default function EndpointDetail() {
                       <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-outline-variant bg-surface-container-lowest px-4 py-3 transition-colors hover:border-primary-container">
                         <div className="flex items-center gap-3">
                           <span
-                            className={`material-symbols-outlined text-[18px] ${c.ok ? 'text-secondary' : 'text-error'}`}
+                            className={`material-symbols-outlined text-[18px] ${
+                              !c.ok
+                                ? "text-error"
+                                : c.httpStatus >= 400
+                                  ? "text-tertiary-container"
+                                  : "text-secondary"
+                            }`}
                           >
-                            {c.ok ? 'check_circle' : 'error'}
+                            {!c.ok
+                              ? "wifi_off"
+                              : c.httpStatus >= 400
+                                ? "gpp_maybe"
+                                : "check_circle"}
                           </span>
                           <div className="flex flex-col">
-                            <span className="font-body text-xs text-on-surface">{formatTimestamp(c.timestamp)}</span>
+                            <span className="font-body text-xs text-on-surface">
+                              {formatTimestamp(c.timestamp)}
+                            </span>
                             <span className="font-body text-[11px] text-on-surface-variant">
-                              {c.ok ? `HTTP ${c.httpStatus} · ${c.responseTimeMs}ms` : c.error || 'Check failed'}
+                              {c.ok
+                                ? `HTTP ${c.httpStatus} · ${c.responseTimeMs}ms`
+                                : c.error || "Check failed"}
                             </span>
                           </div>
                         </div>
@@ -351,7 +412,10 @@ export default function EndpointDetail() {
                     );
 
                     return hasDiff ? (
-                      <Link key={c._id} to={`/dashboard/endpoints/${id}/diff/${c._id}`}>
+                      <Link
+                        key={c._id}
+                        to={`/dashboard/endpoints/${id}/diff/${c._id}`}
+                      >
                         {row}
                       </Link>
                     ) : (
@@ -372,18 +436,28 @@ export default function EndpointDetail() {
               </h3>
               <dl className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
-                  <dt className="font-display text-[11px] uppercase text-on-surface-variant">Check Interval</dt>
-                  <dd className="font-body text-sm text-on-surface">Every {formatInterval(endpoint.checkIntervalMinutes)}</dd>
+                  <dt className="font-display text-[11px] uppercase text-on-surface-variant">
+                    Check Interval
+                  </dt>
+                  <dd className="font-body text-sm text-on-surface">
+                    Every {formatInterval(endpoint.checkIntervalMinutes)}
+                  </dd>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <dt className="font-display text-[11px] uppercase text-on-surface-variant">Last Checked</dt>
-                  <dd className="font-body text-sm text-on-surface">{timeAgo(endpoint.lastCheckedAt)}</dd>
+                  <dt className="font-display text-[11px] uppercase text-on-surface-variant">
+                    Last Checked
+                  </dt>
+                  <dd className="font-body text-sm text-on-surface">
+                    {timeAgo(endpoint.lastCheckedAt)}
+                  </dd>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <dt className="font-display text-[11px] uppercase text-on-surface-variant">Headers</dt>
+                  <dt className="font-display text-[11px] uppercase text-on-surface-variant">
+                    Headers
+                  </dt>
                   <dd className="border-2 border-black bg-surface-container-lowest p-3 font-body text-xs text-on-surface-variant">
                     {Object.keys(endpoint.headers || {}).length === 0
-                      ? 'None configured'
+                      ? "None configured"
                       : Object.entries(endpoint.headers).map(([k, v]) => (
                           <div key={k} className="flex justify-between gap-2">
                             <span className="text-secondary">{k}</span>

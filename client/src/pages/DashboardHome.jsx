@@ -1,18 +1,23 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/useAuth';
-import { useToast } from '../context/useToast';
-import { useConfirm } from '../context/useConfirm';
-import { api } from '../lib/api';
-import { timeAgo, formatInterval } from '../lib/format';
-import StatusBadge from '../components/StatusBadge';
-import Reveal from '../components/Reveal';
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/useAuth";
+import { useToast } from "../context/useToast";
+import { useConfirm } from "../context/useConfirm";
+import { api } from "../lib/api";
+import { timeAgo, formatInterval } from "../lib/format";
+import StatusBadge from "../components/StatusBadge";
+import Reveal from "../components/Reveal";
+import Skeleton from "../components/Skeleton";
 
 function StatCard({ label, value, color }) {
   return (
     <div className="glass-panel flex flex-col gap-2 p-6">
-      <span className="font-display text-[11px] uppercase tracking-0.1em text-on-surface-variant">{label}</span>
-      <span className={`font-display text-3xl font-bold ${color}`}>{value}</span>
+      <span className="font-display text-[11px] uppercase tracking-0.1em text-on-surface-variant">
+        {label}
+      </span>
+      <span className={`font-display text-3xl font-bold ${color}`}>
+        {value}
+      </span>
     </div>
   );
 }
@@ -25,13 +30,13 @@ export default function DashboardHome() {
 
   const [endpoints, setEndpoints] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [actingIds, setActingIds] = useState(() => new Set());
   const [checkingAll, setCheckingAll] = useState(false);
 
   const loadEndpoints = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const data = await api.listEndpoints(token);
       setEndpoints(data);
@@ -61,8 +66,10 @@ export default function DashboardHome() {
       const result = await api.checkNow(token, id);
       setEndpoints((prev) =>
         prev.map((ep) =>
-          ep._id === id ? { ...ep, status: result.status, lastCheckedAt: result.checkedAt } : ep
-        )
+          ep._id === id
+            ? { ...ep, status: result.status, lastCheckedAt: result.checkedAt }
+            : ep,
+        ),
       );
       toast.success(`"${name}" checked - now ${result.status}.`);
     } catch (err) {
@@ -73,7 +80,9 @@ export default function DashboardHome() {
   }
 
   async function handleDelete(id, name) {
-    const ok = await confirm(`Stop monitoring "${name}"? This cannot be undone.`);
+    const ok = await confirm(
+      `Stop monitoring "${name}"? This cannot be undone.`,
+    );
     if (!ok) return;
 
     setActing(id, true);
@@ -90,9 +99,11 @@ export default function DashboardHome() {
   async function handleCheckAll() {
     setCheckingAll(true);
     try {
-      await Promise.all(endpoints.map((ep) => api.checkNow(token, ep._id).catch(() => null)));
+      await Promise.all(
+        endpoints.map((ep) => api.checkNow(token, ep._id).catch(() => null)),
+      );
       await loadEndpoints();
-      toast.success('All endpoints checked.');
+      toast.success("All endpoints checked.");
     } finally {
       setCheckingAll(false);
     }
@@ -100,24 +111,40 @@ export default function DashboardHome() {
 
   const stats = {
     active: endpoints.length,
-    drifted: endpoints.filter((e) => e.status === 'drifted').length,
-    broken: endpoints.filter((e) => e.status === 'broken').length,
+    drifted: endpoints.filter((e) => e.status === "drifted").length,
+    broken: endpoints.filter((e) => e.status === "broken").length,
   };
 
-  const displayName = user?.name || user?.email?.split('@')[0] || 'Developer';
-  const greeting = location.state?.justRegistered ? `Welcome, ${displayName}.` : `Welcome back, ${displayName}.`;
+  const displayName = user?.name || user?.email?.split("@")[0] || "Developer";
+  const greeting = location.state?.justRegistered
+    ? `Welcome, ${displayName}.`
+    : `Welcome back, ${displayName}.`;
 
   return (
     <div className="relative mx-auto flex max-w-1440px flex-col gap-10 px-4 py-12 sm:px-10">
       <Reveal>
-        <h1 className="font-display text-3xl font-bold text-on-surface sm:text-4xl">{greeting}</h1>
+        <h1 className="font-display text-3xl font-bold text-on-surface sm:text-4xl">
+          {greeting}
+        </h1>
       </Reveal>
 
       <Reveal delay={80}>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          <StatCard label="Active Endpoints" value={stats.active} color="text-secondary" />
-          <StatCard label="Drifted" value={stats.drifted} color="text-drift-warning" />
-          <StatCard label="Broken" value={stats.broken} color="text-drift-critical" />
+          <StatCard
+            label="Active Endpoints"
+            value={stats.active}
+            color="text-secondary"
+          />
+          <StatCard
+            label="Drifted"
+            value={stats.drifted}
+            color="text-drift-warning"
+          />
+          <StatCard
+            label="Broken"
+            value={stats.broken}
+            color="text-drift-critical"
+          />
         </div>
       </Reveal>
 
@@ -132,7 +159,7 @@ export default function DashboardHome() {
             className="neo-button-secondary flex items-center gap-2 px-4 py-2 font-display text-xs uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[18px]">radar</span>
-            {checkingAll ? 'Checking...' : 'Check All'}
+            {checkingAll ? "Checking..." : "Check All"}
           </button>
           <Link
             to="/dashboard/add"
@@ -151,17 +178,34 @@ export default function DashboardHome() {
       )}
 
       {loading ? (
-        <div className="glass-panel flex min-h-200px items-center justify-center">
-          <span className="font-body text-sm text-on-surface-variant">Loading endpoints...</span>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="glass-panel flex flex-col gap-4 p-6">
+              <div className="flex justify-between">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-6 w-16" />
+              </div>
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+          ))}
         </div>
       ) : endpoints.length === 0 ? (
         <div className="glass-panel flex min-h-240px flex-col items-center justify-center gap-4 p-12 text-center">
-          <span className="material-symbols-outlined text-4xl text-on-surface-variant">radar</span>
-          <h3 className="font-display text-xl font-semibold text-on-surface">No endpoints yet</h3>
+          <span className="material-symbols-outlined text-4xl text-on-surface-variant">
+            radar
+          </span>
+          <h3 className="font-display text-xl font-semibold text-on-surface">
+            No endpoints yet
+          </h3>
           <p className="max-w-sm font-body text-sm text-on-surface-variant">
-            Register your first API and Schemantics will capture its baseline shape immediately.
+            Register your first API and Schemantics will capture its baseline
+            shape immediately.
           </p>
-          <Link to="/dashboard/add" className="neo-button px-6 py-3 font-display text-sm font-bold uppercase">
+          <Link
+            to="/dashboard/add"
+            className="neo-button px-6 py-3 font-display text-sm font-bold uppercase"
+          >
             Add Your First Endpoint
           </Link>
         </div>
@@ -172,10 +216,15 @@ export default function DashboardHome() {
               <div className="glass-panel flex h-full flex-col gap-4 p-6 transition-transform hover:-translate-y-1">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <Link to={`/dashboard/endpoints/${ep._id}`} className="block truncate font-display text-lg font-semibold text-on-surface hover:text-primary-container">
+                    <Link
+                      to={`/dashboard/endpoints/${ep._id}`}
+                      className="block truncate font-display text-lg font-semibold text-on-surface hover:text-primary-container"
+                    >
                       {ep.name}
                     </Link>
-                    <p className="truncate font-body text-xs text-on-surface-variant">{ep.url}</p>
+                    <p className="truncate font-body text-xs text-on-surface-variant">
+                      {ep.url}
+                    </p>
                   </div>
                   <StatusBadge status={ep.status} />
                 </div>
@@ -188,7 +237,9 @@ export default function DashboardHome() {
                 </div>
 
                 <div className="mt-auto flex items-center justify-between border-t border-outline-variant pt-3">
-                  <span className="font-body text-xs text-on-surface-variant">{timeAgo(ep.lastCheckedAt)}</span>
+                  <span className="font-body text-xs text-on-surface-variant">
+                    {timeAgo(ep.lastCheckedAt)}
+                  </span>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleCheckNow(ep._id, ep.name)}
@@ -197,7 +248,9 @@ export default function DashboardHome() {
                       className="flex h-8 w-8 items-center justify-center border-2 border-black bg-surface-container-high text-on-surface shadow-neo-sm transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50"
                     >
                       <span className="material-symbols-outlined text-[16px]">
-                        {actingIds.has(ep._id) ? 'hourglass_empty' : 'play_arrow'}
+                        {actingIds.has(ep._id)
+                          ? "hourglass_empty"
+                          : "play_arrow"}
                       </span>
                     </button>
                     <button
@@ -206,7 +259,9 @@ export default function DashboardHome() {
                       title="Delete endpoint"
                       className="flex h-8 w-8 items-center justify-center border-2 border-black bg-surface-container-high text-error shadow-neo-sm transition hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none disabled:opacity-50"
                     >
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                      <span className="material-symbols-outlined text-[16px]">
+                        delete
+                      </span>
                     </button>
                   </div>
                 </div>

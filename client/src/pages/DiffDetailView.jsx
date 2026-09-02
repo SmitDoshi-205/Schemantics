@@ -6,6 +6,7 @@ import { useConfirm } from '../context/useConfirm';
 import { api } from '../lib/api';
 import { formatTimestamp } from '../lib/format';
 import Reveal from '../components/Reveal';
+import Skeleton from '../components/Skeleton';
 
 const CHANGE_ICON = { removed: '−', added: '+', type_changed: '~', possible_rename: '⇄' };
 const CHANGE_LABEL = { removed: 'removed', added: 'added', type_changed: 'type changed', possible_rename: 'possible rename' };
@@ -145,9 +146,12 @@ export default function DiffDetailView() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex max-w-1100px items-center justify-center px-4 py-24 sm:px-10">
-        <span className="font-body text-sm text-on-surface-variant">Loading diff...</span>
-      </div>
+      <div className="mx-auto flex max-w-[1100px] flex-col gap-8 px-4 py-12 sm:px-10">
+      <Skeleton className="h-5 w-40" />
+      <Skeleton className="h-16 w-full" />
+      <Skeleton className="h-40 w-full" />
+      <Skeleton className="h-64 w-full" />
+    </div>
     );
   }
 

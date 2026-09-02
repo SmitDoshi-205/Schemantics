@@ -85,20 +85,23 @@ schemantics/
 **Requires:** Node 18+, Python 3.10+, MongoDB running locally.
 
 ```bash
-# 1. Python diff-service
+#1. Cloning the repository
+git clone https://github.com/SmitDoshi-205/Schemantics.git
+
+# 2. Python diff-service
 cd diff-service
 python -m venv venv
 venv\Scripts\activate          # macOS/Linux: source venv/bin/activate
 pip install -r requirements-dev.txt
 uvicorn app.main:app --reload --port 8000
 
-# 2. Node backend (new terminal)
+# 3. Node backend (new terminal)
 cd server
 npm install
 copy .env.example .env         # fill in real values, see below
 npm run dev
 
-# 3. Frontend (new terminal)
+# 4. Frontend (new terminal)
 cd client
 npm install
 copy .env.example .env

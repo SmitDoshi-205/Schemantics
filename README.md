@@ -119,7 +119,7 @@ JWT_SECRET=replace_with_a_real_secret
 DIFF_SERVICE_URL=http://localhost:8000
 FRONTEND_URL=http://localhost:5173
 
-# Email — pick ONE:
+# Email:
 RESEND_API_KEY=re_...
 ALERT_FROM_EMAIL=Schemantics <onboarding@resend.dev>
 

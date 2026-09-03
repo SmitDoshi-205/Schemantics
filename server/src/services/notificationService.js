@@ -1,75 +1,53 @@
-const { Resend } = require('resend');
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 const axios = require('axios');
 
-let cachedResendClient = null;
+let cachedClient = null;
 
-function getResendClient() {
-  if (cachedResendClient) return cachedResendClient;
+function getBrevoClient() {
+  if (cachedClient) return cachedClient;
+  const { BREVO_API_KEY } = process.env;
+  if (!BREVO_API_KEY) return null;
 
-  const { RESEND_API_KEY } = process.env;
-  if (!RESEND_API_KEY) {
-    return null;
-  }
-
-  cachedResendClient = new Resend(RESEND_API_KEY);
-  return cachedResendClient;
+  const defaultClient = SibApiV3Sdk.ApiClient.instance;
+  defaultClient.authentications['api-key'].apiKey = BREVO_API_KEY;
+  cachedClient = new SibApiV3Sdk.TransactionalEmailsApi();
+  return cachedClient;
 }
 
 function buildAlertText(endpointName, status, diff) {
-  const lines = [
-    `Schemantics detected a change in "${endpointName}".`,
-    `Status: ${status}`,
-    '',
-    'Changes:',
-  ];
-
+  const lines = [`Schemantics detected a change in "${endpointName}".`, `Status: ${status}`, '', 'Changes:'];
   for (const d of diff || []) {
     lines.push(`- [${d.severity}] ${d.path}: ${d.changeType} (${d.oldType ?? 'n/a'} -> ${d.newType ?? 'n/a'})`);
   }
-
   return lines.join('\n');
 }
 
 async function sendEmailAlert({ to, endpointName, status, diff }) {
-  const resend = getResendClient();
-
-  if (!resend) {
-    console.warn('[notifications] Email not configured (RESEND_API_KEY missing) - skipping.');
+  const client = getBrevoClient();
+  if (!client) {
+    console.warn('[notifications] Email not configured (BREVO_API_KEY missing) - skipping.');
     return { sent: false, reason: 'not_configured' };
   }
 
+  const email = new SibApiV3Sdk.SendSmtpEmail();
+  email.sender = { email: process.env.ALERT_FROM_EMAIL, name: 'Schemantics' };
+  email.to = [{ email: to }];
+  email.subject = `Schemantics alert: ${endpointName} is ${status}`;
+  email.textContent = buildAlertText(endpointName, status, diff);
+
   try {
-    const { data, error } = await resend.emails.send({
-      from: process.env.ALERT_FROM_EMAIL || 'Schemantics <onboarding@resend.dev>',
-      to,
-      subject: `Schemantics alert: ${endpointName} is ${status}`,
-      text: buildAlertText(endpointName, status, diff),
-    });
-
-    if (error) {
-      console.error('[notifications] Resend API returned an error:', error.message);
-      return { sent: false, reason: error.message };
-    }
-
-    return { sent: true, id: data?.id };
+    await client.sendTransacEmail(email);
+    return { sent: true };
   } catch (err) {
-    console.error('[notifications] Failed to send email alert:', err.message);
-    return { sent: false, reason: err.message };
+    const msg = err.response?.text || err.message;
+    console.error('[notifications] Failed to send email alert:', msg);
+    return { sent: false, reason: msg };
   }
 }
 
 async function sendWebhookAlert({ webhookUrl, endpointName, status, diff }) {
-  if (!webhookUrl) {
-    return { sent: false, reason: 'not_configured' };
-  }
-
-  const payload = {
-    content: buildAlertText(endpointName, status, diff),
-    endpointName,
-    status,
-    diff,
-  };
-
+  if (!webhookUrl) return { sent: false, reason: 'not_configured' };
+  const payload = { content: buildAlertText(endpointName, status, diff), endpointName, status, diff };
   try {
     await axios.post(webhookUrl, payload, { timeout: 10000 });
     return { sent: true };

@@ -16,8 +16,8 @@ A field gets renamed. A type changes. Your API still returns `200`. Every uptime
 
 1. **Register an endpoint** — a URL, method, optional headers, and a check interval.
 2. **Baseline capture** — the first successful call becomes the expected schema, automatically.
-3. **Every subsequent check** — the scheduler calls the same URL again and diffs the new response's shape against the stored baseline, field by field.
-4. **Severity classification** — a removed field or changed type is *breaking*; a new field is a *warning*.
+3. **Every subsequent check** — the scheduler calls the same URL again and diffs the new response's shape against the stored baseline, field by field.*
+4. **Severity classification** — a removed field or changed type is **breaking**; a new field is a **warning**.
 5. **Rename heuristic** — if exactly one field was removed and one added with a matching type in the same check, it's flagged as a "possible rename" instead of two unrelated changes.
 6. **Alerts** — email and/or webhook fire the moment a breaking or warning change is detected.
 7. **Accept or reject** — "Reset Baseline" lets you accept a detected change as the new normal.
@@ -33,7 +33,7 @@ Schemantics never modifies the API being watched — it's a passive observer. Ch
 | Backend | Node.js, Express, MongoDB (Mongoose), JWT auth, `node-cron` |
 | Schema-diff service | Python, FastAPI |
 | Frontend | React, Vite, Tailwind CSS v4 |
-| Notifications | Email (Resend) + generic webhook (Discord/Slack-compatible) |
+| Notifications | Email (Brevo) + generic webhook (Discord/Slack-compatible) |
 
 ---
 
@@ -120,8 +120,8 @@ DIFF_SERVICE_URL=http://localhost:8000
 FRONTEND_URL=http://localhost:5173
 
 # Email:
-RESEND_API_KEY=re_...
-ALERT_FROM_EMAIL=Schemantics <onboarding@resend.dev>
+BREVO_API_KEY=xkeysib-...
+ALERT_FROM_EMAIL=your_verified_gmail@gmail.com
 
 ```
 

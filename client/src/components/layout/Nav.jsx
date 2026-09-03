@@ -115,7 +115,7 @@ export default function Nav() {
       </div>
       </header>
       {menuOpen && (
-        <div className="glass-panel fixed left-0 right-0 top-[72px] z-40 flex flex-col gap-1 p-4 md:hidden">
+        <div className="glass-panel fixed left-0 right-0 top-72px z-40 flex flex-col gap-1 p-4 md:hidden">
         {user ? (
           <>
             <Link

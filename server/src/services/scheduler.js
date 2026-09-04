@@ -1,4 +1,5 @@
 const cron = require('node-cron');
+const axios = require('axios');
 const Endpoint = require('../models/Endpoint');
 const { runCheckForEndpoint } = require('./checkRunner');
 
@@ -10,6 +11,7 @@ function isEndpointDue(endpoint, now = Date.now()) {
 
 function startScheduler() {
   cron.schedule('* * * * *', async () => {
+       axios.get(`${process.env.DIFF_SERVICE_URL}/health`).catch(() => {});
     let endpoints;
     try {
       endpoints = await Endpoint.find({});

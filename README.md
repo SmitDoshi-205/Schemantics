@@ -135,8 +135,8 @@ VITE_API_URL=http://localhost:5000/api
 ## Testing
 
 ```bash
-cd server && npm test          # Jest + Supertest, real in-memory MongoDB
-cd diff-service && pytest      # extraction, comparison, severity, rename heuristic
+cd server && npm test          
+cd diff-service && pytest      
 ```
 
 ### Manual drift testing with the demo API

@@ -114,7 +114,7 @@ Open **http://localhost:5173**.
 
 ```
 PORT=5000
-MONGODB_URI=mongodb://127.0.0.1:27017/schemantics
+MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=replace_with_a_real_secret
 DIFF_SERVICE_URL=http://localhost:8000
 FRONTEND_URL=http://localhost:5173

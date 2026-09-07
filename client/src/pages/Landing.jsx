@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import Reveal from "../components/Reveal";
 import DriftCard from "../components/DriftCard";
+import { useAuth } from '../context/useAuth';
+import { Navigate } from 'react-router-dom';
 
 function SectionHeading({ children }) {
   return (
@@ -49,6 +51,9 @@ function FeatureCard({
 }
 
 export default function Landing() {
+  const { user, loading } = useAuth();
+  if (!loading && user) return <Navigate to="/dashboard" replace />;
+  
   return (
     <main className="mx-auto flex w-full max-w-1440px flex-col gap-16 px-4 py-16 sm:px-10">
       {/* ---------------- HERO ---------------- */}

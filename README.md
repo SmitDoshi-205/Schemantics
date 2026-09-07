@@ -114,7 +114,7 @@ Open **http://localhost:5173**.
 
 ```
 PORT=5000
-MONGODB_URI=mongodb://127.0.0.1:27017/schemantics
+MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=replace_with_a_real_secret
 DIFF_SERVICE_URL=http://localhost:8000
 FRONTEND_URL=http://localhost:5173
@@ -135,8 +135,8 @@ VITE_API_URL=http://localhost:5000/api
 ## Testing
 
 ```bash
-cd server && npm test          # Jest + Supertest, real in-memory MongoDB
-cd diff-service && pytest      # extraction, comparison, severity, rename heuristic
+cd server && npm test          
+cd diff-service && pytest      
 ```
 
 ### Manual drift testing with the demo API
